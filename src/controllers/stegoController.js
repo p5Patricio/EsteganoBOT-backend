@@ -3,14 +3,14 @@ const stegoService = require("../services/stegoService");
 
 async function hide(req, res, next) {
   try {
-    const { message } = req.body;
+    const { message, password } = req.body;
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Message is required" });
     }
 
     const { buffer, originalname } = req.file;
 
-    const resultBuffer = await stegoService.conceal(message, buffer, originalname);
+    const resultBuffer = await stegoService.conceal(message, buffer, password);
 
     const ext = path.extname(originalname).toLowerCase() || ".png";
     const downloadName = `stego${ext}`;
@@ -25,9 +25,10 @@ async function hide(req, res, next) {
 
 async function reveal(req, res, next) {
   try {
-    const { buffer, originalname } = req.file;
+    const { password } = req.body;
+    const { buffer } = req.file;
 
-    const message = await stegoService.reveal(buffer, originalname);
+    const message = await stegoService.reveal(buffer, password);
 
     res.json({ message });
   } catch (err) {

@@ -33,6 +33,7 @@ describe("validateFile", () => {
       size: config.MAX_FILE_SIZE_BYTES + 1,
       mimetype: "image/png",
       originalname: "test.png",
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     });
     const res = mockRes();
     validateFile(req, res, next);
@@ -48,6 +49,7 @@ describe("validateFile", () => {
       size: 100,
       mimetype: "application/pdf",
       originalname: "test.pdf",
+      buffer: Buffer.from("pdf content"),
     });
     const res = mockRes();
     validateFile(req, res, next);
@@ -60,6 +62,7 @@ describe("validateFile", () => {
       size: 100,
       mimetype: "image/png",
       originalname: "test.gif",
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     });
     const res = mockRes();
     validateFile(req, res, next);
@@ -72,6 +75,7 @@ describe("validateFile", () => {
       size: 100,
       mimetype: "image/png",
       originalname: "test<>name.png",
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     });
     const res = mockRes();
     validateFile(req, res, next);
@@ -85,6 +89,7 @@ describe("validateFile", () => {
         size: 100,
         mimetype: "image/png",
         originalname: "test.png",
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       },
       { message: "x".repeat(1001) }
     );
@@ -100,6 +105,7 @@ describe("validateFile", () => {
         size: 100,
         mimetype: "image/png",
         originalname: "test.png",
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       },
       { message: "hello" }
     );
@@ -114,9 +120,90 @@ describe("validateFile", () => {
       size: 100,
       mimetype: "image/jpeg",
       originalname: "test.jpg",
+      buffer: Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
     });
     const res = mockRes();
     validateFile(req, res, next);
     expect(next).toHaveBeenCalled();
+  });
+
+  describe("magic bytes validation", () => {
+    it("accepts valid PNG magic bytes", () => {
+      const req = mockReq({
+        size: 100,
+        mimetype: "image/png",
+        originalname: "test.png",
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("accepts valid JPEG magic bytes", () => {
+      const req = mockReq({
+        size: 100,
+        mimetype: "image/jpeg",
+        originalname: "test.jpg",
+        buffer: Buffer.from([0xff, 0xd8, 0xff, 0xdb]),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("rejects PNG extension with invalid magic bytes", () => {
+      const req = mockReq({
+        size: 100,
+        mimetype: "image/png",
+        originalname: "fake.png",
+        buffer: Buffer.from("this is a text file, not a png"),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(415);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid image format" });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("rejects JPEG extension with invalid magic bytes", () => {
+      const req = mockReq({
+        size: 100,
+        mimetype: "image/jpeg",
+        originalname: "fake.jpg",
+        buffer: Buffer.from("not a jpeg"),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(415);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid image format" });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("rejects empty buffer", () => {
+      const req = mockReq({
+        size: 0,
+        mimetype: "image/png",
+        originalname: "empty.png",
+        buffer: Buffer.alloc(0),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(415);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid image format" });
+    });
+
+    it("rejects buffer too small for magic bytes", () => {
+      const req = mockReq({
+        size: 2,
+        mimetype: "image/png",
+        originalname: "small.png",
+        buffer: Buffer.from([0x89, 0x50]),
+      });
+      const res = mockRes();
+      validateFile(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(415);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid image format" });
+    });
   });
 });

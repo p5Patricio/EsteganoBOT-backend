@@ -13,7 +13,7 @@ function parseIntEnv(value, name) {
 
 const PORT = parseIntEnv(process.env.PORT, "PORT") || 3000;
 const NODE_ENV = process.env.NODE_ENV || "development";
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:8080";
+const CORS_ORIGIN = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "http://localhost:8080";
 const RATE_LIMIT_WINDOW_MS =
   parseIntEnv(process.env.RATE_LIMIT_WINDOW_MS, "RATE_LIMIT_WINDOW_MS") || 15 * 60 * 1000;
 const RATE_LIMIT_MAX = parseIntEnv(process.env.RATE_LIMIT_MAX, "RATE_LIMIT_MAX") || 100;

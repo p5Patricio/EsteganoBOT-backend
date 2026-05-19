@@ -7,9 +7,10 @@ jest.mock("steggy");
 const app = createApp();
 
 function createFakePng() {
-  return Buffer.from(
-    "\x89PNG\r\n\x1a\n" + "IHDR".padStart(20, "\x00")
-  );
+  return Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ...new Array(20).fill(0)
+  ]);
 }
 
 describe("Integration: API routes", () => {
