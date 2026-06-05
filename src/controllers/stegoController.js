@@ -8,9 +8,9 @@ async function hide(req, res, next) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    const { buffer, originalname } = req.file;
+    const { path: filePath, originalname } = req.file;
 
-    const resultBuffer = await stegoService.conceal(message, buffer, password);
+    const resultBuffer = await stegoService.conceal(message, filePath, password);
 
     const ext = path.extname(originalname).toLowerCase() || ".png";
     const downloadName = `stego${ext}`;
@@ -26,9 +26,9 @@ async function hide(req, res, next) {
 async function reveal(req, res, next) {
   try {
     const { password } = req.body;
-    const { buffer } = req.file;
+    const { path: filePath } = req.file;
 
-    const message = await stegoService.reveal(buffer, password);
+    const message = await stegoService.reveal(filePath, password);
 
     res.json({ message });
   } catch (err) {

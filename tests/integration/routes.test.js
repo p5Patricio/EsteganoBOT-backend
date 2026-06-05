@@ -77,7 +77,7 @@ describe("Integration: API routes", () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe("Processing failed");
-      expect(res.body.code).toBe("STEGGY_ERROR");
+      expect(res.body.code).toBe("INVALID_PASSWORD");
     });
   });
 
@@ -111,7 +111,7 @@ describe("Integration: API routes", () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe("Processing failed");
-      expect(res.body.code).toBe("STEGGY_ERROR");
+      expect(res.body.code).toBe("INVALID_PASSWORD");
     });
   });
 

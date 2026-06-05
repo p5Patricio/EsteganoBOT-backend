@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const config = require("../config");
 
 const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg"];
@@ -12,13 +13,24 @@ function isSafeFilename(name) {
   return safePattern.test(name) && !name.includes("..");
 }
 
-function hasValidMagicBytes(buffer, mimetype) {
-  if (!buffer || !Buffer.isBuffer(buffer)) return false;
+function hasValidMagicBytes(filePath, mimetype) {
+  if (!filePath) return false;
+
+  let buffer;
+  try {
+    const fd = fs.openSync(filePath, "r");
+    const bytesToRead = mimetype === "image/png" ? 8 : 3;
+    buffer = Buffer.alloc(bytesToRead);
+    fs.readSync(fd, buffer, 0, bytesToRead, 0);
+    fs.closeSync(fd);
+  } catch (err) {
+    return false;
+  }
 
   if (mimetype === "image/png") {
     // PNG: 89 50 4E 47 0D 0A 1A 0A
     const pngMagic = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    return buffer.subarray(0, 8).equals(pngMagic);
+    return buffer.equals(pngMagic);
   }
 
   if (mimetype === "image/jpeg") {
@@ -50,7 +62,7 @@ function validateFile(req, res, next) {
     return res.status(415).json({ error: "Unsupported file type" });
   }
 
-  if (!hasValidMagicBytes(file.buffer, file.mimetype)) {
+  if (!hasValidMagicBytes(file.path, file.mimetype)) {
     return res.status(415).json({ error: "Invalid image format" });
   }
 
